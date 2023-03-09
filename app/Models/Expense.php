@@ -10,6 +10,6 @@ class Expense extends Model
     use HasFactory;
 
     protected $fillable = [
-        'description', 'value'
+        'description', 'date', 'value'
     ];
 }
