@@ -42,6 +42,13 @@ return [
             'after_commit' => false,
         ],
 
+        'notifications' => [
+            'driver' => 'database',
+            'table' => 'jobs',
+            'queue' => 'notifications',
+            'retry_after' => 90,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => 'localhost',

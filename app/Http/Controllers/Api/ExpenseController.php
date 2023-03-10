@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Api\BaseController as BaseController;
 use App\Http\Resources\ExpenseResource as ExpenseResource;
 use App\Models\Expense;
+use App\Notifications\ExpenseCreatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -41,6 +42,10 @@ class ExpenseController extends BaseController
         }
 
         $expense = Expense::create($input);
+
+        $user = Auth::user();
+        $user->notify((new ExpenseCreatedNotification($expense))->onQueue('default'));
+//        $user->notify((new ExpenseCreatedNotification($expense))->onQueue('default')->delay(now()->addMinutes(10)));
 
         return $this->sendResponse(new ExpenseResource($expense), 'Despesa criada com sucesso!');
     }
