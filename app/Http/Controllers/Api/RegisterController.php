@@ -17,7 +17,7 @@ class RegisterController extends BaseController
         $validator = Validator::make($input, [
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|password'
+            'password' => 'required|string|min:6'
         ]);
 
         if ($validator->fails()) {

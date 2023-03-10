@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BaseController as BaseController;
 use App\Http\Resources\ExpenseResource as ExpenseResource;
 use App\Models\Expense;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class ExpenseController extends BaseController
@@ -15,7 +16,8 @@ class ExpenseController extends BaseController
      */
     public function index()
     {
-        $expenses = Expense::all();
+        $user = Auth::user();
+        $expenses = $user->expenses;
 
         return $this->sendResponse(ExpenseResource::collection($expenses), 'Despesas retornadas com sucesso!');
     }
@@ -28,8 +30,8 @@ class ExpenseController extends BaseController
         $input = $request->all();
 
         $validator = Validator::make($input, [
-            'user_id' => 'required|numeric|exists:users',
-            'date' => 'required|date|before_or_equal' . now()->format('Y-m-d'),
+            'user_id' => 'required|numeric|exists:App\Models\User,id',
+            'date' => 'required|date|before_or_equal:' . now()->format('Y-m-d'),
             'description' => 'required|string|max:191',
             'value' => 'required|numeric|min:0'
         ]);
@@ -46,13 +48,10 @@ class ExpenseController extends BaseController
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(Expense $expense)
     {
-        $expense = Expense::find($id);
-
-        if (empty($expense)) {
-            return $this->sendError('Despesa não encontrada');
-        }
+        $this->authorize('view', $expense);
+        $expense = Expense::findOrFail($expense->id);
 
         return $this->sendResponse(new ExpenseResource($expense), 'Despesa retornada com sucesso');
     }
@@ -60,12 +59,15 @@ class ExpenseController extends BaseController
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Expense $expense)
     {
+        $this->authorize('update', $expense);
+        $expense = Expense::findOrFail($expense->id);
+
         $input = $request->all();
 
         $validator = Validator::make($input, [
-            'date' => 'required|date|before_or_equal' . now()->format('Y-m-d'),
+            'date' => 'required|date|before_or_equal:' . now()->format('Y-m-d'),
             'description' => 'required|string|max:191',
             'value' => 'required|numeric|min:0'
         ]);
@@ -73,8 +75,6 @@ class ExpenseController extends BaseController
         if ($validator->fails()) {
             return $this->sendError('Erro de validação.', $validator->errors());
         }
-
-        $expense = Expense::find($id);
 
         $expense->date = $input['date'];
         $expense->description = $input['description'];
@@ -88,9 +88,11 @@ class ExpenseController extends BaseController
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(Expense $expense)
     {
-        $expense = Expense::findOrFail($id);
+        $this->authorize('delete', $expense);
+        $expense = Expense::findOrFail($expense->id);
+
         $expense->delete();
 
         return $this->sendResponse([], 'Despesa excluida com sucesso!');
